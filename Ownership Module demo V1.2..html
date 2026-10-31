@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARCOS Ownership Module: Governed State and Authority Root</title>
+<style>
+:root{color-scheme:dark;--bg:#050706;--ink:#e6f4ec;--mut:#86a695;--line:#1d3a2b;--acc:#3ddc97;--bad:#ff7a6e;--ok:#5fe3a0;--c1:#2fd486;--c2:#1aa566;--c3:#7be0ab;--c4:#0f8a55;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(900px 400px at 50% -80px,#0f2a1d,#050706 70%) fixed #050706}
+main{max-width:640px;margin:0 auto;padding:18px 14px 40px}
+h1{font-size:22px;line-height:1.2;margin:0 0 4px;color:#7be0ab;background:linear-gradient(100deg,#7be0ab,#e9fff3 40%,#2fd486 70%,#7be0ab);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:15px;margin:0 0 6px;color:#9be8c0}
+h3{font-size:13px;margin:14px 0 2px;color:#9be8c0}
+.s{color:var(--mut);margin:0 0 10px;font-size:13px}
+.card{background:linear-gradient(165deg,#0f1a14,#080c0a);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:inset 0 1px 0 #2a5a42}
+.dom{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.big{font-size:26px;font-weight:700;margin:2px 0}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid var(--line);background:#0a130e;white-space:nowrap}
+.ok{color:var(--ok);border-color:var(--ok)}.bad{color:var(--bad);border-color:var(--bad)}
+ul{margin:0;padding:0;list-style:none}
+li{padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+li:first-child{border-top:0}
+.v{display:flex;justify-content:space-between}
+.tag{display:inline-block;background:#12301f;color:#9be8c0;border-radius:4px;padding:0 7px;font-size:12px;font-weight:600;margin-right:4px}
+.m{color:var(--mut);font-size:12px}.g{color:var(--acc);font-size:12px}
+.empty{color:var(--mut);font-size:13px}
+.bar{display:flex;height:32px;border-radius:6px;overflow:hidden;position:relative;margin:8px 0 6px}
+.seg{display:flex;align-items:center;justify-content:center;color:#03130b;font-size:12px;font-weight:700;overflow:hidden;white-space:nowrap}
+.mark{position:absolute;top:0;bottom:0;width:2px;background:#e9fff3}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 3px}
+select,input{width:100%;font:inherit;padding:9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.step{margin:14px 0 2px;font-weight:600;font-size:14px}
+.step b{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:var(--acc);color:#03130b;margin-right:8px;font-size:13px}
+.chk{display:flex;flex-wrap:wrap;gap:6px}
+.chk label{display:flex;align-items:center;gap:6px;margin:0;padding:6px 10px;border:1px solid var(--line);border-radius:99px;color:var(--ink);font-size:13px}
+.chk input{width:auto;accent-color:var(--acc)}
+button{font:inherit;font-weight:700;width:100%;margin-top:12px;padding:12px;border:0;border-radius:8px;background:linear-gradient(135deg,#0d6a43,#3ddc97 48%,#0d6a43);color:#03130b;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.res{margin-top:12px;padding:10px;border-radius:8px;border:1px solid var(--line);font-size:14px;display:none}
+.res.a{display:block;border-color:var(--ok);color:var(--ok)}.res.r{display:block;border-color:var(--bad);color:var(--bad)}
+details{margin-top:12px;font-size:13px;color:var(--mut)}
+</style>
+</head>
+<body>
+<main>
+<h1>Ownership Module: governed state</h1>
+<p class="s">Governed State has four parts: A Ownership, B Agreements and Relationships, C Rights over the Work, and D Version. The Authority Root is read from A and never stored. Make a change at the bottom and see why it is accepted or rejected.</p>
+<section class="card">
+  <h3 style="margin:0 0 4px">How to read this in 3 steps</h3>
+  <ol style="margin:4px 0 0 18px;padding:0"><li>Press <b>Load an example</b> in section B. It fills in a rental, a delegation and two IP licences.</li><li>Read A to D. A says who owns it, B and C say what has been granted, and D counts the changes.</li><li>Press <b>Revoke</b> on any card, or use <b>Make a change</b>. Then watch the lifecycle and the checks update.</li></ol>
+</section>
+
+<section class="card">
+  <div class="dom"><h2>A. Ownership</h2><span class="pill" id="ver"></span></div>
+  <div class="m">ERC-721 token holder</div>
+  <div class="big" id="ownbig"></div>
+  <p class="s" id="ownsub"></p>
+  <div class="m">Verified by the Verification module (read through MAS, not stored here). The same module verifies the token and the asset.</div>
+  <ul id="vlist" style="margin-top:6px"></ul>
+  <label for="vsim">Simulate the Verification module</label>
+  <select id="vsim"><option value="ok">All verified</option><option value="owner">Owner not verified</option><option value="token">Token not verified</option><option value="asset">Asset not verified</option></select>
+</section>
+
+<div id="sharebody" hidden></div>
+<div id="root" hidden></div>
+
+<section class="card">
+  <h2>B. Agreements and Relationships</h2>
+  <p class="s">Rental and temporary use, custody and safeguarding, and delegation of authority. The owner approves each one. Empty means the holder has everything. Every record reads as a card with a plain sentence.</p>
+  <button id="exb" style="padding:8px;margin-bottom:6px">Load an example to read</button>
+  <h3>Who can do what now (computed, never stored)</h3>
+  <ul id="now"></ul>
+  <div class="m" style="margin-top:6px">Day <b id="day"></b></div>
+  <button id="adv" style="margin-top:6px;padding:8px">Advance 10 days (agreements expire on their own)</button>
+  <h3>Rental and temporary use</h3>
+  <ul id="b-rent"></ul>
+  <h3>Custody and safeguarding</h3>
+  <ul id="b-cust"></ul>
+  <h3>Delegation of authority</h3>
+  <ul id="b-del"></ul>
+  <h3>Parties, conditions, duration and termination rules</h3>
+  <p class="s">Every record above carries its parties, its conditions (named action, fee reference, purpose, limits), its duration (start and end day) and its termination rules (who can end it early, what happens at sale, acceptance by the other party).</p>
+  <ul id="b-other"></ul>
+</section>
+
+<section class="card">
+  <h2>C. Rights over the Work</h2>
+  <p class="s">Intellectual property: copyright, trademark, patent and design. Each right has its own holder, who approves its own records. Holders: <b id="rh"></b></p>
+  <h3>Associated IP and rights claims</h3>
+  <ul id="c-claims"></ul>
+  <label for="rvs">Rights holder claim (Verification)</label><select id="rvs"><option value="ok">Verified</option><option value="no">Not verified</option></select>
+  <h3>Licenses and legal agreements</h3>
+  <ul id="recs2"></ul>
+  <h3>Relevant compliance conditions and evidence</h3>
+  <ul id="c-evid"></ul>
+  <h3>References to the Copyright / Licensing / Compliance domain</h3>
+  <ul id="c-refs"></ul>
+</section>
+
+<section class="card">
+  <h2>D. Version</h2>
+  <p class="s">The version of the governed state or rules, supporting consistent authorization checks, updates and historical tracking.</p>
+  <ul id="dver"></ul>
+</section>
+
+<section class="card">
+  <h2>Make a change</h2>
+  <div class="step"><b>1</b>What do you want to do?</div>
+  <p class="s" id="ownnow" style="margin:4px 0"></p>
+  <select id="act">
+    <optgroup label="Ownership: current owner, shared ownership, threshold limit">
+      <option value="share">Share ownership (give a percentage, so it becomes shared)</option>
+      <option value="xfer">Transfer the token (a new current owner, sole owner only)</option>
+      <option value="terms">Set the threshold limit (shared only)</option>
+      <option value="actv">Activate the token</option>
+      <option value="ret">Retire the token (ends it for good)</option>
+    </optgroup>
+    <optgroup label="Agreements over the token">
+      <option value="rent">Rent it out</option>
+      <option value="cust">Give custody</option>
+      <option value="dele">Let someone act for me (delegate)</option>
+      <option value="rev">Revoke an agreement</option>
+      <option value="ext">Extend an agreement</option>
+      <option value="acc">Accept an agreement (other party)</option>
+      <option value="dact">Act as a delegate (uses a delegation)</option>
+    </optgroup>
+    <optgroup label="Intellectual property (IP) rights">
+      <option value="lic">Grant a licence</option>
+      <option value="copy">Assign an IP right</option>
+      <option value="dw">Delegate for the rights holder</option>
+    </optgroup>
+  </select>
+  <p class="s" id="exp" style="margin:6px 0 0"></p>
+  <div class="step"><b>2</b>Details</div>
+  <div data-f="from"><label for="from">Take shares from</label><select id="from"></select></div>
+  <div data-f="to"><label for="to" id="tol">Party</label><input id="to" value="Carol"></div>
+  <div data-f="pct"><label for="pct" id="pctl">Percent</label><input id="pct" type="number" value="40"></div>
+  <div data-f="rec"><label for="rec">Which agreement</label><select id="rec"></select></div>
+  <div data-f="rg"><label for="rg">Which IP right</label><select id="rg"><option>Copyright</option><option>Trademark</option><option>Patent</option><option>Design</option></select></div>
+  <div data-f="reg"><label for="reg">Registration pointer (registry and number; needed for trademark, patent, design)</label><input id="reg" value=""></div>
+  <div data-f="bn"><label for="bn">Airdrops and rewards go to</label><select id="bn"><option value="owner">The owner</option><option value="holder">The other party</option></select></div>
+  <div data-f="sc"><label for="sc">Named action (scope)</label><select id="sc"></select></div>
+  <div data-f="tr"><label for="tr">Territory</label><select id="tr"><option>Worldwide</option><option>India</option><option>US</option></select></div>
+  <div data-f="ex"><label for="ex">Exclusive?</label><select id="ex"><option value="0">No</option><option value="1">Yes (no other licence for the same use and territory)</option></select></div>
+  <div data-f="eb"><label for="eb">Who can end it early</label><select id="eb"><option value="owner">The owner</option><option value="party">Only the other party (e.g. loan security)</option><option value="either">Either</option></select></div>
+  <div data-f="fee"><label for="fee">Fee or deposit reference (paid outside, e.g. a Settlement ID)</label><input id="fee" value=""></div>
+  <div data-f="pu"><label for="pu">Purpose of the custody</label><select id="pu"><option>Safekeeping</option><option>Loan security</option><option>Sale escrow</option></select></div>
+  <div data-f="vc"><label for="vc">Value cap per action (blank = none)</label><input id="vc" type="number" value=""></div>
+  <div data-f="cp"><label for="cp">Only with this counterparty (blank = anyone)</label><input id="cp" value=""></div>
+  <div data-f="dc"><label for="dc">Signed agreement (link or hash)</label><input id="dc" value=""></div>
+  <div data-f="nacc"><label for="nacc">Other party must accept first</label><select id="nacc"><option value="1">Yes (starts as pending)</option><option value="0">No (active at once)</option></select></div>
+  <div data-f="pol"><label for="pol">If the delegator’s authority is lost</label><select id="pol"><option value="lapse">The delegation lapses</option><option value="survive">The delegation survives</option></select></div>
+  <div data-f="dy"><label for="dy">Term in days (blank = no end)</label><input id="dy" type="number" value="30"></div>
+  <div data-f="fl"><label for="fl">When the token is sold</label><select id="fl"><option value="0">The agreement ends</option><option value="1">The agreement stays with the token</option></select></div>
+  <div data-f="rs"><label for="rs">Reason</label><select id="rs"><option value="gen">General use of the token</option><option value="lic">Copyright or licensing (needs a linked licence)</option></select></div>
+  <div data-f="lt"><label for="lt">The licence goes to</label><select id="lt"><option value="person">The named party (stays with the person)</option><option value="token">Whoever owns the token (follows the token)</option></select></div>
+  <div class="step"><b>3</b>Who approves?</div>
+  <p class="s" id="need" style="margin-bottom:6px"></p>
+  <div class="chk" id="who"></div>
+  <button id="go">Submit change</button>
+  <div class="res" id="res" role="status"></div>
+  <details><summary>Advanced: test a stale request</summary>
+    <label for="rv">Request built on version</label><input id="rv" type="number" value="1">
+  </details>
+</section>
+
+<section class="card">
+  <h2>Authority Root</h2>
+  <p class="s">The central authority-evaluation and state-transition mechanism. It reads the governed state (A to D), evaluates authority, applies the lifecycle rules and preconditions, tests the invariants on a proposed state, and only then commits. It stores nothing itself, and nothing changes the state any other way.</p>
+  <h3>Authority, read from the governed state</h3>
+  <p class="s">Three shapes. None is stored: each is evaluated from A, B, C and D every time it is needed.</p>
+  <p class="s" style="margin:6px 0 2px"><b>Independent</b> · established in its own domain (A Ownership, C Rights)</p>
+  <ul id="au-ind"></ul>
+  <p class="s" style="margin:6px 0 2px"><b>Derived</b> · inherited from a relationship (B Agreements, C Licences)</p>
+  <ul id="au-der"></ul>
+  <p class="s" style="margin:6px 0 2px"><b>Computed</b> · calculated when asked, from A, B, C and D</p>
+  <ul id="au-com"></ul>
+  <h3>Ask the Authority Root (computed authority)</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><select id="aq-p"></select><select id="aq-q"><option value="use">Can they use the token now?</option><option value="act:list for sale">Can they list it for sale for the owner?</option><option value="act:display">Can they display it for the owner?</option><option value="act:manage">Can they manage it for the owner?</option><option value="act:vote in governance">Can they vote for the owner?</option><option value="act:claim airdrops">Can they claim airdrops for the owner?</option><option value="approve">Can they approve an ownership change alone?</option><option value="lic:Copyright">Can they grant a copyright licence?</option><option value="lic:Trademark">Can they grant a trademark licence?</option><option value="lic:Patent">Can they grant a patent licence?</option><option value="lic:Design">Can they grant a design licence?</option></select></div>
+  <p class="s" id="ask" style="margin:6px 0"></p>
+  <h3>Path of the last change</h3>
+  <div id="arpath"></div>
+  <h3>Lifecycle rules and invariant evaluation</h3>
+  <p class="s" id="lcsum" style="margin:4px 0"></p>
+  <details>
+  <summary style="cursor:pointer">Show the working</summary>
+  <div id="life" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div>
+  <div class="big" id="lcnow" style="font-size:1.1rem;margin:8px 0 2px"></div>
+  <p class="s" id="lcwhy" style="display:none"></p>
+  <h3>You can do now</h3>
+  <ul id="lcok"></ul>
+  <h3>Blocked now, and why</h3>
+  <ul id="lcno"></ul>
+  <h3>Path so far (read from History)</h3>
+  <p class="s" id="lcpath"></p>
+  <h3>Invariants</h3>
+  <ul id="inv"></ul>
+  </details>
+<h3>State transitions (live, from History)</h3>
+  <p class="s">Only the transitions that have actually run appear here, one row per kind, newest first, with when they last ran. This is computed live from History and nothing is stored in it.</p>
+  <ul id="trs"></ul>
+  <details style="margin:10px 0"><summary style="cursor:pointer"><b>Test controls</b></summary>
+  <label for="bug">Try the gate: simulate a bug in a precondition</label>
+  <select id="bug"><option value="">No bug (normal)</option><option value="lic">Bug: skip the exclusive-licence check</option><option value="use">Bug: skip the double-use check</option></select>
+  <p class="s">To see it: grant an exclusive licence, turn on the first bug, then grant a second exclusive licence for the same use. The precondition is skipped, but the draft breaks an invariant and is rolled back. For the second bug, set “Other party must accept first” to No and rent the token twice.</p>
+  <label for="comp">Compliance status (external input)</label><select id="comp"><option value="clear">Clear</option><option value="frozen">Frozen</option></select>
+  <div id="gate" hidden></div>
+  </details>
+</section>
+
+<section class="card">
+  <h2>History (append-only)</h2>
+  <p class="s">Every attempt, accepted or rejected, with who was ticked. Only accepted changes raise the version. A reverted on-chain transaction writes nothing, so the contract may need another way to record rejections.</p>
+  <ul id="hist" style="max-height:280px;overflow:auto"></ul>
+</section>
+
+<section class="card">
+  <h2>Failure and recovery</h2>
+  <h3><span class="pill ok">Live in this demo</span> When something fails</h3>
+  <ul>
+    <li>A rejected change writes nothing. The owner, shares and agreements stay exactly as they were, and the attempt appears in History.</li>
+    <li>If Verification fails or there is a compliance freeze, authority is suspended. Nothing can change until it clears.</li>
+    <li>A request built on an old version is rejected and has to be rebuilt on the current one.</li>
+  </ul>
+  <h3><span class="pill">Planned, not active</span> When the owner’s key is lost</h3>
+  <ul>
+    <li>The owner names a recovery wallet in advance.</li>
+    <li>If the key is lost, the recovery wallet asks to move the claim to a new address, and a delay starts.</li>
+    <li>The current owner can cancel during the delay. If nobody cancels, the claim moves when the delay ends.</li>
+    <li>Only the claim moves. The shares stay as they are.</li>
+    <li>How active agreements are treated on recovery is still to be decided.</li>
+  </ul>
+</section>
+</main>
+<script>
+const S={holder:"Alice",sh:null,recs:[],v:1,th:50,rh:"Creator",rt:"Brand Co",rp:"Inventor Co",rd:"Studio X",life:"Minted",day:0,n:0,hl:"Alice",log:[{ok:true,tl:"Mint",by:"mint",m:"Token minted to Alice. Alice holds 100%.",v:1}]};
+const sel=new Set(["Alice"]);
+const $=id=>document.getElementById(id);
+const own=()=>S.sh&&S.sh.length>1?S.sh:[{n:S.holder,s:100}];
+const shared=()=>own().length>1;
+const st=r=>r.x?"ended":r.ac===false?"pending":r.en!=null&&S.day>=r.en?"expired":"active",live=r=>st(r)==="active";
+const stageOf=()=>S.life==="Ended"?"Ended":($("vsim").value!=="ok"||$("comp").value!=="clear")?"Suspended":S.life,STG={Minted:["share","xfer","terms","actv","ret"],Active:["share","xfer","terms","rent","cust","dele","dact","rev","ext","acc","lic","copy","dw","ret"],Suspended:[],Ended:[]};
+const stageNow=()=>{const sus=$("vsim").value!=="ok"||$("comp").value!=="clear",lv=S.recs.filter(live),tk=lv.filter(r=>r.k==="tok").length;return stageOf()+" · "+(shared()?"Shared":"Sole owner")+" · "+(tk?tk+" grant"+(tk>1?"s":""):"no grants")+" · "+(lv.some(r=>r.t==="Licence")?"licensed":"no licences")};
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const KIND={rent:"o",cust:"o",dele:"o",rev:"o",ext:"o",acc:"p",dact:"d",actv:"o",ret:"o",share:"o",xfer:"o",terms:"o",lic:"r",copy:"r",dw:"r"};
+const SC={rent:["display","use in an app","access gated content","play in a game"],cust:["hold the token"],dele:["list for sale","display","manage","vote in governance","claim airdrops","grant licences"],dact:["list for sale","display","manage","vote in governance","claim airdrops"],dw:["grant licences","collect royalties","list for sale"],lic:["stream","print","merchandise","adapt"]},AUTH={"list for sale":"o","display":"o","manage":"o","use in an app":"o","vote in governance":"o","claim airdrops":"o","grant licences":"r","collect royalties":"r"},hd=g=>({Trademark:S.rt,Patent:S.rp,Design:S.rd})[g]||S.rh,PU={Safekeeping:"the owner asks","Loan security":"the loan is repaid","Sale escrow":"the sale completes"},SCR={Copyright:["stream","print","merchandise","adapt"],Trademark:["use the name on products","use the logo"],Patent:["manufacture","sell","use in a defined field"],Design:["manufacture","sell"]};
+const EXP={actv:"Moves the token from Minted to Active. Until then no agreements or rights can be created.",dact:"A delegate performs one delegated action. The Authority Root re-reads the delegators’ authority now and applies the delegation’s declared policy.",ret:"Ends the token for good. Needs no live or pending agreements. Nothing can change afterwards.",share:"Gives part of the claim to someone, so ownership becomes shared and the current owners change. Domain 1 only.",xfer:"Moves the whole claim from a sole owner to a new current owner. Delegations and agreements that don’t follow the token end.",terms:"Sets the threshold limit: owners must hold more than this percentage of the shares to approve a change.",rent:"Someone uses the token for a term and pays a fee set outside the module. The owner approves and the renter must accept. No sub-renting.",cust:"Someone holds the token for a purpose and can’t sell or re-pledge it. Loan security and sale escrow can only be ended early by the other party.",dele:"Someone acts for the owner on one named action. The owner can only hand over what the owner holds.",rev:"Revoke: the grantor takes back what was granted. Who may revoke follows that record’s rule: the owner, the other party, or either. IP records need the holder of that right.",ext:"Adds days to a live token agreement. The owner approves.",acc:"The other party accepts a pending agreement. Until then it isn’t active.",lic:"Lets someone use an IP right (copyright, trademark, patent or design) for one named use. The holder of that right approves. Exclusive licences can’t overlap.",copy:"Moves one right to a new holder. Licences stay and bind the new holder.",dw:"Someone acts for one right’s holder. Ends if that right is assigned."};
+const FIELDS={rent:["to","sc","fee","dy","rs","bn","eb","fl","dc","nacc"],cust:["to","pu","dy","bn","eb","fl","dc","nacc"],dele:["to","sc","vc","cp","dy","rs","bn","eb","dc","nacc","pol"],dact:["sc"],ext:["rec","dy"],acc:["rec"],lic:["to","rg","lt","sc","tr","ex","reg","dy"],copy:["to","rg","reg"],dw:["to","rg","sc","dy"],rev:["rec"],share:["to","pct"],xfer:["to"],terms:["pct"],actv:[],ret:[]};
+const LBL={to:{rent:"Who rents it",cust:"Who holds it for the owner",dele:"Who acts for the owner",lic:"Who gets the licence",copy:"New holder of the right",dw:"Who acts for the rights holder",share:"Give shares to",xfer:"New owner"},pct:{share:"Percent to give",terms:"New threshold: more than (%)"}};
+const cols=["--c1","--c2","--c3","--c4"];
+const TRS=[["Share ownership","Domain 1","Owners above the threshold","Amount within what the giver holds"],["Transfer the token","Domain 1","Owners above the threshold","Sole owner only"],["Set the threshold limit","Domain 1","Owners above the threshold","Co-owners exist, value 1 to 99"],["Rent it out","Domain 2","Owners above the threshold","No live rental or custody, linked licence if commercial"],["Give custody","Domain 2","Owners above the threshold","No live rental or custody"],["Let someone act for me","Domain 2","Owners above the threshold","The action belongs to the owner"],["Revoke an agreement","Domain 2","That record’s rule: owner, other party or either","The record is active"],["Extend an agreement","Domain 2","Owners above the threshold","A live token agreement with an end date"],["Accept an agreement","Domain 2","The other party","The agreement is pending"],["Grant a licence","Domain 2","Holder of that right","No overlapping exclusive licence"],["Assign an IP right","Domain 2","Holder of that right","Registration pointer if registered"],["Delegate for the rights holder","Domain 2","Holder of that right","The action belongs to the rights holder"]];
+function render(){
+  const O=own(),vs=$("vsim").value,act=$("act").value,k=KIND[act];
+  $("ver").textContent="Version "+S.v;
+  $("ownbig").textContent=S.holder;
+  const vs2=$("vsim").value,fz=$("comp").value!=="clear",enc=S.recs.filter(r=>r.k==="tok"&&live(r)),rsn=[];if(vs2!=="ok")rsn.push("Verification failed ("+vs2+")");if(fz)rsn.push("Compliance freeze");if(enc.length)rsn.push("Encumbered by "+enc.map(r=>r.t.toLowerCase()).join(", "));
+  $("ownsub").innerHTML="<b>Current owner or owners:</b> "+O.map(o=>o.n).join(", ")+"<br><b>Ownership shares and interests:</b> "+O.map(o=>o.n+" "+o.s+"%").join(", ")+". Threshold limit: more than "+S.th+"% of the shares approves a change.<br><b>Full or shared ownership:</b> "+(shared()?"Shared ("+O.length+" owners).":"Full ("+S.holder+" holds 100%).")+"<br><b>Ownership status and relevant restrictions:</b> "+(stageOf()+". ")+(rsn.length?rsn.join("; ")+".":"No restrictions.");
+  $("ownnow").textContent="Stage: "+stageOf()+" · Now: "+O.map(o=>o.n+" "+o.s+"%").join(" · ")+" · Shared ownership: "+(shared()?"on":"off")+" · Threshold limit: more than "+S.th+"%";
+  $("vlist").innerHTML=[["Owner","owner"],["Token","token"],["Asset","asset"]].map(x=>`<li class="v"><span>${x[0]} verified</span><span class="pill ${vs===x[1]?"bad":"ok"}">${vs===x[1]?"Failed":"Verified"}</span></li>`).join("");
+  $("sharebody").innerHTML=shared()
+    ?`<p class="s">The holder chose to share. The shares are stored in Domain 1. Approval needs owners holding more than ${S.th}% (the threshold line).</p><div class="bar">${O.map((o,i)=>`<div class="seg" style="width:${o.s}%;background:var(${cols[i%4]})">${o.n} ${o.s}%</div>`).join("")}<div class="mark" style="left:${S.th}%"></div></div><ul>${O.map(o=>`<li>${o.n} holds ${o.s}%. ${o.s>S.th?"Can approve alone.":"Needs co-owners to pass "+S.th+"%."}</li>`).join("")}</ul>`
+    :`<p class="s" style="margin:0">Off. ${S.holder} holds the token alone. Sharing is optional. Choose “Share ownership” in the change box to give a percentage to someone.</p>`;
+  let h;
+  if(vs!=="ok")h=`<span class="pill bad">Suspended</span> The Verification module has not verified the ${vs}, so no authority is derived.`;
+  else if($("comp").value==="frozen")h=`<span class="pill bad">Suspended</span> Compliance freeze: nobody can approve a change until it is cleared.`;
+  else if(!shared())h=`<span class="pill ok">Case 1: sole owner</span> ${S.holder} holds 100% and is the only authority.`;
+  else{const a=O.filter(o=>o.s>S.th);h=`<span class="pill ok">Case 2: shared</span> ${a.length?a[0].n+" holds more than "+S.th+"% and can approve alone.":"No one passes "+S.th+"% alone. Owners holding more than "+S.th+"% together can approve."}`;}
+  $("root").innerHTML=h;
+  const sen=r=>{const w=r.p,e=r.en!=null?" until day "+r.en:" with no end date",o=r.bn==="holder"?w:"the owner",g=(r.rg||"right").toLowerCase();if(r.k==="tok"){if(r.t==="Rental")return w+" may use the token ("+r.sc+")"+e+". The owner keeps ownership and can still sell. Airdrops and rewards go to "+o+"."+(r.fee?" Fee reference: "+r.fee+".":"")+" "+w+" can’t sub-rent it.";if(r.t==="Custody")return w+" holds the token"+e+" for "+(r.pu||"safekeeping").toLowerCase()+" and can’t sell it or re-pledge it. The owner stays the owner. Released when "+PU[r.pu||"Safekeeping"]+". Airdrops and rewards go to "+o+".";if(r.t==="Delegation")return w+" may act for the owner on one thing: "+r.sc+e+(r.vc?", up to a value of "+r.vc:"")+(r.cp?", only with "+r.cp:"")+". "+w+" can’t pass this on.";return ""}if(r.t==="Licence")return w+" may use the "+g+" for “"+r.sc+"”"+(r.tr?" in "+r.tr:"")+e+(r.ex?", and nobody else may for that use":"")+". The "+g+" stays with its holder.";if(r.t==="Delegation (rights holder)")return w+" may act for the "+g+" holder on one thing: "+r.sc+e+".";if(/assignment/.test(r.t))return "The "+g+" now belongs to "+w+". Licences already granted stay in force.";return ""};
+  const li=r=>`<li${st(r)==="active"?"":' style="opacity:.55"'}><span class="tag">${r.t}</span> ${r.p} <span class="pill ${st(r)==="active"?"ok":"bad"}">${st(r)}</span>${st(r)==="active"&&r.id!=null?`<button class="rvk" onclick="pre(${r.id})" style="width:auto;padding:3px 10px;margin-left:8px">Revoke</button>`:""}<div style="margin:4px 0">${r.ac===false?"<b>Pending: "+r.p+" has not accepted yet.</b> ":""}${sen(r)}</div><div class="m">${r.sl||"Governance"} · ${r.sc}${r.en!=null?" · until day "+r.en:""} · approved by ${r.by} · v${r.v}${r.h?" · doc "+r.h:""}${r.reg?" · registered: "+r.reg:""}${r.dc?" · agreement: "+r.dc:""}${r.bn?" · airdrops go to "+(r.bn==="holder"?r.p:"the owner"):""}</div>${r.fl===undefined?"":`<div class="g">${r.fl?"Stays with the token at sale":"Ends at sale"}</div>`}${r.eb?`<div class="g">Ended early by: ${{owner:"the owner",party:r.p,either:"the owner or "+r.p}[r.eb]}</div>`:""}${r.f?`<div class="g">The right follows the token. Right now: ${O.map(o=>o.n).join(", ")}</div>`:""}${r.lk?`<div class="g">Reason: licensing, linked to the licence for ${r.lk}</div>`:""}</li>`;
+  const tok=S.recs.filter(r=>r.k==="tok"),wk=S.recs.filter(r=>r.k==="work"),mk=ty=>{const a=tok.filter(r=>r.t===ty);return a.length?a.map(li).join(""):'<li class="empty">None yet.</li>'},ot=tok.filter(r=>!["Rental","Custody","Delegation"].includes(r.t));
+  $("b-rent").innerHTML=mk("Rental");$("b-cust").innerHTML=mk("Custody");$("b-del").innerHTML=mk("Delegation");$("b-other").innerHTML=ot.map(li).join("");
+  const ptr=wk.filter(r=>r.reg).map(r=>r.reg),hsh=wk.filter(r=>r.h).map(r=>r.h),vl=x=>'<li class="v"><span>'+x[0]+'</span><b style="text-align:right">'+x[1]+'</b></li>';
+  $("c-claims").innerHTML=["Copyright","Trademark","Patent","Design"].map(g=>vl([g,"held by "+hd(g)])).join("");
+  $("c-evid").innerHTML=[["Rights holder claim",$("rvs").value==="ok"?"Verified":"Not verified"],["Compliance status",$("comp").value==="clear"?"Clear":"Frozen"],["Registration pointers",ptr.length?ptr.join(", "):"none yet"],["Signed agreement hashes",hsh.length?hsh.join(", "):"none yet"]].map(vl).join("");
+  $("c-refs").innerHTML=[["Copyright domain","creation, registration and assignment rules. This module stores the holder and a registration pointer only."],["Licensing domain","licence terms and law. This module stores the licence record and the agreement hash."],["Compliance domain","freezes, court orders and sanctions. This module reads the status and never stores it."]].map(x=>'<li><span class="tag">'+x[0]+'</span> '+x[1]+'</li>').join("");
+  $("dver").innerHTML=[["Version of the governed state","v"+S.v],["Version of the rules","Rules v1.0"],["Authorization checks","Every request is built on version "+S.v+". An older version is rejected as stale."],["Updates","Each accepted change raises the version by one. Rejected changes leave it unchanged."],["Historical tracking",S.log.length+" ledger entries, each stamped with its version."]].map(vl).join("");
+  $("recs2").innerHTML=wk.length?wk.map(li).join(""):'<li class="empty">None yet.</li>';
+  $("rh").textContent="Copyright: "+S.rh+" · Trademark: "+S.rt+" · Patent: "+S.rp+" · Design: "+S.rd;
+  $("day").textContent=S.day;
+  const A=ty=>S.recs.filter(r=>r.t===ty&&live(r)),ow=O.map(o=>o.n).join(" + "),cu=A("Custody")[0],re=A("Rental")[0],de=A("Delegation"),wl=A("Licence"),wd=A("Delegation (rights holder)"),ut=x=>x.en!=null?" until day "+x.en:"",row=(a,b)=>`<li class="v"><span>${a}</span><b style="text-align:right">${b}</b></li>`;
+  $("now").innerHTML=row("Possession",cu?cu.p+" (custody)":ow)+row("Use",cu?cu.p+" (custody)"+ut(cu):re?re.p+" (rental)"+ut(re):ow)+row("Sell or transfer",ow+(cu?" (not the custodian)":""))+row("Acts for the owner",de.length?de.map(x=>x.p+": "+x.sc+ut(x)).join("; "):"nobody")+row("IP rights","Copyright: "+S.rh+", Trademark: "+S.rt+", Patent: "+S.rp+", Design: "+S.rd+(wl.length?" · licensed: "+wl.map(x=>x.p+" ("+x.sc+")"+ut(x)).join(", "):"")+(wd.length?" · delegates: "+wd.map(x=>x.p).join(", "):""));
+  const rl=S.recs.filter(r=>(live(r)||st(r)==="pending")&&r.id!=null),pv=$("rec").value;
+  $("rec").innerHTML=rl.length?rl.map(r=>`<option value="${r.id}">${r.t} · ${r.p}</option>`).join(""):'<option value="">None active</option>';
+  if(rl.some(r=>String(r.id)===pv))$("rec").value=pv;
+  const lv=S.recs.filter(live),sus=$("vsim").value!=="ok"||$("comp").value!=="clear",tk=lv.filter(r=>r.k==="tok"),pend=S.recs.some(r=>r.ac===false&&!r.x),busy=A("Custody")[0]||A("Rental")[0],stg=stageNow(),chip=(n,on,bad)=>`<span class="pill ${on?(bad?"bad":"ok"):""}" style="${on?"":"opacity:.4"}">${n}</span>`;
+  $("life").innerHTML="<b>Stage:</b> "+["Minted","Active","Suspended","Ended"].map(g=>chip(g,stg.startsWith(g),g==="Suspended")).join(" → ")+" &nbsp;<b>Facets:</b> "+chip(shared()?"Shared":"Sole owner",true)+" "+chip(tk.length?tk.length+" live grant"+(tk.length>1?"s":""):"no grants",tk.length>0)+" "+chip("Licensed",A("Licence").length>0)+" "+chip("Awaiting acceptance",pend);
+  const DS={Minted:"Just minted. Nothing has changed yet. Everything is open to the owner.",Active:"The claim is live. What you can do depends on the facets: sole or shared, grants live or none, licensed or not.",Suspended:"Verification failed or a compliance freeze applies. This comes from outside the module. Nothing can change until it clears."};
+  $("lcnow").textContent="Stage now: "+stg+" · day "+S.day+" · version "+S.v;
+  $("lcwhy").textContent=DS[stg.split(" ")[0]]+(pend?" An agreement is awaiting acceptance.":"")+(A("Licence").length?" IP licences are live.":"");
+  const RL=[["Share ownership","share"],["Transfer the token","xfer"],["Set the threshold limit","terms"],["Activate the token","actv"],["Rent it out","rent"],["Give custody","cust"],["Let someone act for me","dele"],["Act as a delegate","dact"],["Revoke an agreement","rev"],["Extend an agreement","ext"],["Accept an agreement","acc"],["Grant a licence or assign an IP right","lic"],["Retire the token","ret"]].map(x=>[x[0],!STG[stageOf()].includes(x[1])?(sus?"suspended by verification or a compliance freeze":"not allowed while the token is "+stageOf().toLowerCase()):BLK[x[1]]()]);
+  $("lcok").innerHTML=RL.filter(x=>!x[1]).map(x=>`<li>✓ ${x[0]}</li>`).join("")||'<li class="empty">Nothing.</li>';
+  $("lcno").innerHTML=RL.filter(x=>x[1]).map(x=>`<li>✗ ${x[0]} <span class="m">· ${x[1]}</span></li>`).join("")||'<li class="empty">Nothing is blocked.</li>';
+  [...$("act").options].forEach(o=>{if(o.dataset.b===undefined)o.dataset.b=o.text;const k=o.value,sg=stageOf(),rs=!STG[sg].includes(k)?(sg==="Minted"?"activate the token first":sg==="Ended"?"the token has ended":sg==="Suspended"?"suspended by an outside input":"only for a Minted token"):(BLK[k]?BLK[k]():null);o.text=o.dataset.b+(rs?"  ✗ blocked now: "+rs:"")});
+  const sq=[];S.log.filter(e=>e.ok).slice().reverse().forEach(e=>{const g=e.sg||"Minted · Sole owner · no grants · no licences";if(sq[sq.length-1]!==g)sq.push(g)});$("lcpath").textContent=sq.join(" → ");
+  const inv=invs().concat([["Version rises one step per accepted change",S.log.filter(e=>e.ok).length===S.v,"Every accepted change is counted and recorded."],["Rights and Agreements never changed the owner",!S.bad,"Agreements can never take ownership away."]]);
+  const thr=O.filter(o=>o.s>S.th),vl2=(a,b)=>'<li class="v"><span>'+a+'</span><b style="text-align:right">'+b+'</b></li>',lvr=S.recs.filter(r=>r.t!=="Co-owner terms"&&r.id!=null&&(live(r)||(r.ac===false&&!r.x)));
+  $("au-ind").innerHTML=vl2("Ownership (A)",thr.length?thr[0].n+" holds "+thr[0].s+"%, above the "+S.th+"% threshold, so approves alone":"no one holds more than "+S.th+"%, so approval needs "+O.map(o=>o.n).join(" + "))+vl2("Rights (C)","Copyright: "+S.rh+" · Trademark: "+S.rt+" · Patent: "+S.rp+" · Design: "+S.rd);
+  $("au-der").innerHTML=lvr.length?lvr.map(r=>vl2(r.p,(r.t==="Rental"?"may use the token":r.t==="Custody"?"holds the token":r.t==="Delegation"?"may "+r.sc+" for the owner":r.t==="Licence"?"may use the "+(r.rg||"right").toLowerCase()+" for “"+r.sc+"”":"may "+r.sc+" for the "+(r.rg||"right").toLowerCase()+" holder")+(r.en!=null?", until day "+r.en:"")+(r.ac===false?" (pending, not in force)":"")+(r.t==="Delegation"&&live(r)?(delEff(r).ok?" · its delegators still hold authority":" · LAPSED: its delegators lost authority"):"")+" · from the "+r.t.toLowerCase()+" in "+(r.k==="tok"?"B":"C"))).join(""):vl2("(none)","no agreement or licence gives anyone authority right now");
+  const uh=S.recs.find(r=>r.t==="Custody"&&live(r))||S.recs.find(r=>r.t==="Rental"&&live(r));
+  $("au-com").innerHTML=vl2("Who can use the token now",uh?uh.p+" ("+uh.t.toLowerCase()+")":O.map(o=>o.n).join(", ")+" (the owners)")+vl2("Who can act for the owner",S.recs.filter(r=>r.t==="Delegation"&&live(r)&&delEff(r).ok).map(r=>r.p+": "+r.sc).join("; ")||"nobody beyond the owners")+vl2("Who can approve an ownership change",thr.length?thr[0].n+" alone":"only "+O.map(o=>o.n).join(" + ")+" together");
+  const STEPS=["1. Read the current state","2. Applicable threshold and rule","3. Actor’s authority","4. Delegation (if involved)","5a. Lifecycle","5b. Preconditions","5c. Proposed state","5d. Invariants","6. Commit"],g3=S.g2;
+  $("arpath").innerHTML=!S.tl?'<p class="s">No change attempted yet.</p>':'<ol style="margin:4px 0 0 18px;padding:0"><li><b>Change:</b> '+S.tl+'</li>'+STEPS.map((n,i)=>{const r=S.tr&&S.tr[i];return '<li><b>'+n+'</b> '+(r?'<span class="pill '+(r.ok?'ok':'bad')+'">'+(r.na?'n/a':r.ok?'pass':'fail')+'</span>':'<span class="pill" style="opacity:.5">not reached</span>')+(r?'<div class="m">'+r.why+'</div>':'')+(i===7&&g3&&g3.rows?'<ul>'+g3.rows.map(x=>'<li class="v"><span>'+x.n+'</span><span class="pill '+(x.ok?'ok':'bad')+'">'+(x.ok?'Holds':'Would break')+'</span></li>').join('')+'</ul>':'')+'</li>'}).join('')+'</ol>';
+  const pn=[...new Set([...O.map(o=>o.n),S.rh,S.rt,S.rp,S.rd,...S.recs.filter(r=>r.k==="tok").map(r=>r.p)])],pp=$("aq-p").value;$("aq-p").innerHTML=pn.map(n=>'<option>'+n+'</option>').join('');$("aq-p").value=pn.includes(pp)?pp:pn[0];$("ask").innerHTML=ask($("aq-p").value,$("aq-q").value);
+  const okc=inv.filter(x=>x[1]).length,sp=stg.split(" · ");$("lcsum").innerHTML="<b>"+sp[0]+"</b> · "+sp.slice(1).join(" · ")+" &nbsp;<span class=\"pill "+(okc===inv.length?"ok":"bad")+"\">Invariants "+okc+" of "+inv.length+" hold</span>";
+  const g2=S.g2;$("gate").innerHTML=!S.tl?'<p class="s">No change attempted yet.</p>':'<ol style="margin:4px 0 0 18px;padding:0"><li><b>Change:</b> '+S.tl+'</li>'+(g2?'<li><b>Draft built:</b> '+g2.df+'</li><li><b>Invariants tested on the draft:</b><ul>'+g2.rows.map(x=>'<li class="v"><span>'+x.n+' <span class="m">('+x.k+')</span></span><span class="pill '+(x.ok?'ok':'bad')+'">'+(x.ok?'Holds':'Would break')+'</span></li>').join('')+'</ul></li><li><b>Result:</b> '+(g2.rolled?'<span class="pill bad">Rolled back</span> the draft was thrown away and the real state is unchanged.':'<span class="pill ok">Committed</span> the draft became the state, version '+S.v+'.')+'</li>':'<li><b>Stopped at the gates,</b> before any draft was built. The invariants were not reached.</li>')+'</ol>';
+  $("inv").innerHTML=inv.map(x=>`<li class="v"><span>${x[0]}</span><span class="pill ${x[1]?"ok":"bad"}">${x[1]?"Holds":"Broken"}</span></li>`).join("");
+  const gm=new Map();S.log.forEach(e=>{if(!gm.has(e.tl))gm.set(e.tl,{a:0,r:0,last:e});const o=gm.get(e.tl);e.ok?o.a++:o.r++});
+  $("trs").innerHTML=gm.size?[...gm].map(([n,o])=>`<li><b>${n}</b> <span class="pill ${o.last.ok?"ok":"bad"}">${o.last.ok?"accepted":"rejected"}</span><div class="m">${o.a} accepted · ${o.r} rejected · last: day ${o.last.d||0}${o.last.at?" · "+o.last.at:""}${o.last.ok&&o.last.v?" · v"+o.last.v:""}</div></li>`).join(""):'<li class="empty">No transitions yet.</li>';
+  $("hist").innerHTML=S.log.map(e=>`<li><span class="pill ${e.ok?"ok":"bad"}">${e.ok?"v"+e.v:"Rejected"}</span> <b>${e.tl}</b><div class="m">${e.ok?"Approved by":"Ticked"}: ${e.by} · ${e.m}</div></li>`).join("");
+  const f=FIELDS[act];
+  document.querySelectorAll("[data-f]").forEach(d=>{const n=d.dataset.f;d.style.display=(f.includes(n)||(n==="from"&&act==="share"&&shared()))?"":"none"});
+  if(LBL.to[act])$("tol").textContent=LBL.to[act];
+  if(LBL.pct[act])$("pctl").textContent=LBL.pct[act];
+  $("exp").textContent=EXP[act]||"";const sv=$("sc").value,so=act==="lic"?SCR[$("rg").value]:(SC[act]||[]);$("sc").innerHTML=so.map(x=>`<option>${x}</option>`).join("");if(so.includes(sv))$("sc").value=sv;
+  const pf=$("from").value;$("from").innerHTML=O.map(o=>`<option>${o.n}</option>`).join("");if(O.some(o=>o.n===pf))$("from").value=pf;
+  const parties=O.map(o=>o.n);[S.rh,S.rt,S.rp,S.rd].forEach(x=>{if(!parties.includes(x))parties.push(x)});S.recs.forEach(r=>{if(r.eb&&(live(r)||st(r)==="pending")&&!parties.includes(r.p))parties.push(r.p)});
+  [...sel].forEach(x=>{if(!parties.includes(x))sel.delete(x)});
+  $("who").innerHTML=parties.map(p=>`<label><input type="checkbox" value="${p}"${sel.has(p)?" checked":""}> ${p}${p===S.rh?" (copyright holder)":""}${p===S.rt?" (trademark holder)":""}${p===S.rp?" (patent holder)":""}${p===S.rd?" (design holder)":""}</label>`).join("");
+  $("who").querySelectorAll("input").forEach(c=>c.onchange=()=>{c.checked?sel.add(c.value):sel.delete(c.value);need()});
+  need();
+}
+function need(){
+  const k=KIND[$("act").value],O=own(),sum=O.filter(o=>sel.has(o.n)).reduce((a,o)=>a+o.s,0);
+  $("need").textContent=$("act").value==="dact"?"Tick the delegate who is acting. Their delegation is checked against the owners’ current authority.":$("act").value==="acc"?"Needs only the other party to accept. Tick them.":$("act").value==="rev"?"Needs whoever that record’s “who can end it” rule names: the owners, the other party, or either. Work records need that right’s holder.":k==="r"?"Needs the holder of the chosen right ("+hd($("rg").value)+").":shared()?"Needs owners holding more than "+S.th+"% together. Ticked so far: "+sum+"%.":"Needs the owner: "+S.holder+".";
+}
+function pre(id){const r=S.recs.find(x=>x.id===id);if(!r)return;$("act").value="rev";$("act").dispatchEvent(new Event("change"));sel.clear();sel.add(r.k==="work"?hd(r.rg):(r.eb==="party"?r.p:S.holder));render();$("rec").value=String(id);$("res").className="res";$("res").textContent="Revoke selected for "+r.t+" · "+r.p+". The approver is pre-ticked. Press Submit, or change who approves to see it rejected.";$("go").scrollIntoView({behavior:"smooth",block:"center"})}
+function say(ok,m){const r=$("res");r.className="res "+(ok?"a":"r");r.textContent=(ok?"Accepted: ":"Rejected: ")+m;if(S.t){if(S.tr){if(ok)trc(8,true,"Every check passed, so the proposed state became the state atomically. Version advanced once to "+S.v+". History appended.");else if(S.tr[7]&&S.tr[7].ok===false)trc(8,false,"Closed: nothing was committed. The proposed state was thrown away.")}S.log.unshift({ok:ok,tl:S.tl,by:S.ap,m:m,v:ok?S.v:null,sg:stageNow(),d:S.day,at:new Date().toLocaleTimeString()});S.t=null;render()}}
+const trc=(i,ok,why,na)=>{S.tr[i]={ok:ok,why:why,na:na}},AUTHT={acc:"Derived",rev:"Derived",dact:"Derived"};
+function authCheck(t){const th0=rule(t).th,s=own().filter(o=>sel.has(o.n)).reduce((a,o)=>a+o.s,0),tk=own().filter(o=>sel.has(o.n)).map(o=>o.n+" "+o.s+"%").join(", ")||"nobody";
+ if(t==="dact"){const a=[...sel].find(p=>S.recs.some(r=>r.t==="Delegation"&&r.p===p));return a?{m:null,who:"the delegate "+a+", acting under a delegation (checked in step 4)",actor:a}:{m:"the ticked party holds no delegation. Tick the delegate who is acting.",who:"a delegate"}}
+ if(t==="lic"||t==="copy"||t==="dw"){const R=$("rg").value,h=hd(R);return {m:sel.has(h)?null:"this needs the holder of the "+R.toLowerCase()+" ("+h+"). Owner shares don’t count here.",who:"the holder of the "+R.toLowerCase()+" ("+h+")"}}
+ if(t==="acc"){const r=S.recs.find(x=>String(x.id)===$("rec").value&&x.ac===false&&!x.x);return r?{m:sel.has(r.p)?null:"only "+r.p+" can accept this agreement. Tick "+r.p+".",who:"the other party ("+r.p+")"}:{m:null,who:"the other party"}}
+ if(t==="rev"){const r=S.recs.find(x=>String(x.id)===$("rec").value&&live(x));if(!r)return {m:null,who:"per the record’s rule"};
+  if(r.k==="work"){const H=hd(r.rg);return {m:sel.has(H)?null:"ending this record needs the holder of its right ("+H+").",who:"the holder of the "+r.rg.toLowerCase()+" ("+H+")"}}
+  const ow=s>S.th,pt=sel.has(r.p),eb=r.eb||"owner";return {m:eb==="owner"&&!ow?"only the owner can end this one, and "+r.p+" can’t. Owners ticked hold "+s+"%, more than "+S.th+"% is needed.":eb==="party"&&!pt?"only "+r.p+" can end this one early. The owner can’t pull it back.":eb==="either"&&!ow&&!pt?"needs the owner (more than "+S.th+"%) or "+r.p+".":null,who:eb==="owner"?"owners above the threshold":eb==="party"?"the other party ("+r.p+")":"owners above the threshold, or "+r.p}}
+ return {m:s>th0?null:"approvals hold "+s+"% of shares. More than "+th0+"% is needed.",who:"owners holding more than "+th0+"% (ticked: "+tk+")"}}
+const STRICT=66;
+function rule(t){if(t==="lic"||t==="copy"||t==="dw")return {th:null,label:"The holder of the chosen right approves alone."};if(t==="acc")return {th:null,label:"Only the other party named in the pending record may accept."};if(t==="rev")return {th:S.th,label:"Per the record: the owner (more than "+S.th+"%), the other party, or either. IP records need that right’s holder."};if(t==="dact")return {th:null,label:"A live delegation must cover the action, and its delegators must still hold authority if its policy says so."};if(t==="terms"||t==="ret")return {th:STRICT,label:"Strict (rule-changing or irreversible): owners holding more than "+STRICT+"% of the shares."};return {th:S.th,label:"Ordinary: owners holding more than "+S.th+"% of the shares."}}
+function delEff(r){const O=own(),s=(r.dg||[]).reduce((a,n)=>a+((O.find(o=>o.n===n)||{}).s||0),0);return {ok:r.pol==="survive"||!(r.dg&&r.dg.length)||s>S.th,s:s}}
+function delCheck(t,actor){if(t!=="dact")return null;const sc=$("sc").value,r=S.recs.find(x=>x.t==="Delegation"&&x.p===actor&&x.sc===sc&&!x.x);
+ if(!r)return {m:actor+" holds no delegation for “"+sc+"”."};if(r.ac===false)return {m:"the delegation is pending acceptance, so it is not in force."};if(!live(r))return {m:"the delegation has expired."};
+ const e=delEff(r);if(!e.ok)return {m:"the delegation lapses under its declared policy: its delegators ("+r.dg.join(", ")+") now hold "+e.s+"%, and more than "+S.th+"% is needed."};
+ return {m:null,why:"Delegation from "+(r.dg&&r.dg.length?r.dg.join(", "):"the owner")+" covers “"+sc+"”"+(r.en!=null?" until day "+r.en:"")+". Policy: "+(r.pol==="survive"?"survives a change of ownership":"lapses if the delegators lose authority")+". Delegators hold "+e.s+"% now."}}
+function ask(p,q){const O=own(),mk=(y,sh,w)=>'<span class="pill '+(y?'ok':'bad')+'">'+(y?'Yes':'No')+'</span> <b>'+sh+'</b> · '+w;
+ if(q==="use"){const c=S.recs.find(r=>r.t==="Custody"&&live(r)),r=S.recs.find(x=>x.t==="Rental"&&live(x)),h=c?c.p:r?r.p:null;if(h)return mk(p===h,"Computed","the "+(c?"custodian":"renter")+" holds use now ("+h+"), read from the live "+(c?"custody":"rental")+" record"+(p===h?".":", not "+p+"."));const io=O.some(o=>o.n===p);return mk(io,"Computed","no live rental or custody, so use rests with the owners ("+O.map(o=>o.n).join(", ")+")"+(io?".":", not "+p+"."))}
+ if(q.startsWith("act:")){const a=q.slice(4),d=S.recs.find(r=>r.t==="Delegation"&&r.p===p&&r.sc===a&&!r.x);if(d&&live(d)){const e=delEff(d);return e.ok?mk(true,"Derived","a delegation from "+((d.dg&&d.dg.length)?d.dg.join(", "):"the owner")+" covers “"+a+"”"+(d.en!=null?" until day "+d.en:"")+(d.pol==="survive"?". It survives a change of ownership.":". Its delegators still hold "+e.s+"%.")):mk(false,"Derived","the delegation lapses under its declared policy: its delegators now hold "+e.s+"%, and more than "+S.th+"% is needed.")}if(d&&d.ac===false)return mk(false,"Derived","the delegation exists but is pending acceptance, so it is not in force.");const o=O.find(x=>x.n===p&&x.s>S.th);return o?mk(true,"Independent","an owner holding "+o.s+"%, above the "+S.th+"% threshold."):mk(false,"Derived","no live delegation gives "+p+" “"+a+"”, and "+p+" is not an owner above the threshold.")}
+ if(q==="approve"){const o=O.find(x=>x.n===p);return o?mk(o.s>S.th,"Independent",p+" holds "+o.s+"%"+(o.s>S.th?", above the "+S.th+"% threshold, so approves alone.":", not above "+S.th+"%, so needs others.")):mk(false,"Independent",p+" holds no ownership shares.")}
+ if(q.startsWith("lic:")){const R=q.slice(4),h=hd(R);return mk(p===h,"Independent","the "+R.toLowerCase()+" is held by "+h+(p===h?", who can license or assign it.":". Only the holder can grant it, not "+p+"."))}
+ return ""}
+const bug=k=>$("bug").value===k,useHeld=()=>{const c=S.recs.find(r=>(r.t==="Custody"||r.t==="Rental")&&live(r));return c?"use is already held by "+c.p+" ("+c.t.toLowerCase()+")":null},rvOK=()=>$("rvs").value==="no"?"the rights holder claim is not verified":null;
+const BLK={share:()=>null,xfer:()=>shared()?"co-owners exist, consolidate first":null,terms:()=>shared()?null:"only for shared ownership",rent:()=>bug("use")?null:useHeld(),cust:()=>bug("use")?null:useHeld(),dele:()=>null,rev:()=>S.recs.some(live)?null:"nothing live to revoke",ext:()=>S.recs.some(r=>r.k==="tok"&&live(r)&&r.en!=null)?null:"no live token agreement with an end date",acc:()=>S.recs.some(r=>r.ac===false&&!r.x)?null:"nothing is pending",dact:()=>S.recs.some(r=>r.t==="Delegation"&&live(r))?null:"no live delegation exists",actv:()=>S.life==="Minted"?null:"the token is already "+S.life.toLowerCase(),ret:()=>S.life==="Ended"?"the token is already ended":S.recs.some(r=>live(r)||(r.ac===false&&!r.x))?"revoke live and pending agreements first":null,lic:rvOK,copy:rvOK,dw:rvOK};
+function invs(){const lv=S.recs.filter(live),O=own();return [["Shares always total 100%",O.reduce((a,o)=>a+o.s,0)===100,"Ownership always adds up."],["At most one live rental or custody, so use is never double-held",lv.filter(r=>r.t==="Rental"||r.t==="Custody").length<=1,"Two parties can never use the token at once."],["No delegate holds more than its delegator",lv.every(r=>r.t==="Delegation"?AUTH[r.sc]!=="r":r.t==="Delegation (rights holder)"?AUTH[r.sc]!=="o":true),"Nobody can hand over what they don’t hold."],["No two live exclusive licences overlap",!lv.some((a,i)=>a.t==="Licence"&&a.ex&&lv.some((b,j)=>j!==i&&b.t==="Licence"&&b.rg===a.rg&&b.sc===a.sc&&(a.tr===b.tr||a.tr==="Worldwide"||b.tr==="Worldwide"))),"Exclusive means exclusive."],["Nothing is live unless the token is Active",S.life==="Active"||S.recs.filter(live).length===0,"A token that is not active, or has ended, holds no live agreements."]]}
+function done(m){if(!S.tr[5])trc(5,true,"Every precondition for this change held.");const D2=["rent","cust","dele","rev","lic","copy","dw","ext","acc","dact"],rows=invs().map(x=>({n:x[0],ok:x[1],k:"state rule"}));rows.push({n:"Rights and Agreements never change the owner",ok:!(D2.includes(S.t)&&JSON.stringify([S.holder,S.sh])!==S.d0),k:"transition rule"});
+  const b0=JSON.parse(S.snap),df="records "+b0.recs.length+" → "+S.recs.length+" · shares "+(b0.sh?b0.sh.map(o=>o.n+" "+o.s+"%").join(", "):b0.holder+" 100%")+" → "+own().map(o=>o.n+" "+o.s+"%").join(", "),br=rows.filter(x=>!x.ok);S.g2={rows:rows,df:df,rolled:br.length>0};trc(6,true,"Proposed state built; the real state is untouched. "+df+".");trc(7,br.length===0,br.length?"Would break: "+br.map(x=>x.n).join("; ")+".":"All "+rows.length+" invariants hold on the proposed state.");
+  if(br.length){Object.assign(S,JSON.parse(S.snap));return say(false,"the draft would break "+br.map(x=>"“"+x.n+"”").join(" and ")+". Rolled back, nothing was changed.")}
+  let n="";if(["rent","cust","dele","rev","lic","copy","dw"].includes(S.t)&&JSON.stringify([S.holder,S.sh])!==S.d0)S.bad=1;if(S.hl!==S.holder){const a=S.recs.filter(r=>r.k==="tok"&&(live(r)||st(r)==="pending")&&(r.fl===false||r.t==="Delegation"));a.forEach(r=>r.x=1);n=a.length?" "+a.length+" agreement(s) that don’t follow the token ended at the sale.":S.recs.some(r=>r.k==="tok"&&live(r)&&r.fl)?" Agreements that follow the token stay in force.":"";S.hl=S.holder}S.v++;$("rv").value=S.v;render();say(true,m+n+" Version is now "+S.v+".")}
+function run(){S.t=$("act").value;S.tl=$("act").selectedOptions[0].text;S.ap=[...sel].join(" + ")||"nobody";S.d0=JSON.stringify([S.holder,S.sh]);S.g2=null;S.tr=[];S.snap=JSON.stringify({holder:S.holder,sh:S.sh,recs:S.recs,rh:S.rh,rt:S.rt,rp:S.rp,rd:S.rd,n:S.n,th:S.th,life:S.life});
+  const t=$("act").value,k=KIND[t],O=own(),to=esc($("to").value.trim()||"Carol"),sc=esc($("sc").value.trim()||"no limit"),p=+$("pct").value;
+  const no=m=>{trc(5,false,m);return say(false,m)},stop=(i,m)=>{trc(i,false,m);return say(false,m)};
+  if(+$("rv").value!==S.v)return stop(0,"stale request. It was built on version "+$("rv").value+" but the state is at version "+S.v+". Authority is never judged from an old state.");
+  trc(0,true,"Read at version "+S.v+": "+own().map(o=>o.n+" "+o.s+"%").join(", ")+" · threshold "+S.th+"%. The request is current.");
+  trc(1,true,rule(t).label+" Judged on the state read above, before this change. The resulting state is never used to authorize it.");
+  const am=authCheck(t);if(am.m)return stop(2,am.m);trc(2,true,(AUTHT[t]||"Independent")+" authority: "+am.who+".");
+  const dc=delCheck(t,am.actor);if(dc&&dc.m)return stop(3,dc.m);if(dc)trc(3,true,dc.why);else trc(3,true,"No delegation is involved in this change.",true);
+  if($("vsim").value!=="ok")return stop(4,"the Verification module has not verified the "+$("vsim").value+", so no authority is derived.");
+  if($("comp").value!=="clear")return stop(4,"a compliance freeze suspends the Authority Root.");
+  if($("rvs").value==="no"&&k==="r")return stop(4,"the rights holder claim is not verified, so the work side has no authority yet.");
+  const sg0=stageOf();if(STG[sg0]&&!STG[sg0].includes(t))return stop(4,"the token is "+sg0+". "+(sg0==="Minted"?"Activate it before creating agreements or rights.":sg0==="Ended"?"An ended token can’t change.":sg0==="Suspended"?"It is suspended by verification or a compliance freeze.":"Activation only applies to a Minted token.")+" This change is not allowed at this stage.");
+  trc(4,true,"Stage "+sg0+" allows this change, and the external inputs are clear.");
+  const bk=BLK[t]&&BLK[t]();if(bk)return stop(5,"not allowed in the current state: "+bk+".");
+  const hh=s=>"0x"+[...s].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7).toString(16).padStart(8,"0");
+  if(t==="dact"){return done($("sc").value+" performed by "+am.actor+" for the owner, under a delegation. No governed state changed.")}
+  if(t==="acc"){
+    const r=S.recs.find(x=>String(x.id)===$("rec").value&&x.ac===false&&!x.x);if(!r)return no("there is no pending agreement to accept.");
+    if(!sel.has(r.p))return no("only "+r.p+" can accept this agreement. Tick "+r.p+".");
+    if(r.t!=="Delegation"){const c=S.recs.find(x=>x!==r&&(x.t==="Custody"||x.t==="Rental")&&live(x));if(c)return no("the use of the token is now held by "+c.p+". This one can’t start while that is live.")}
+    r.ac=true;return done(r.t+" for "+r.p+" accepted and now active. Owner, shares, and authority are unchanged.");
+  }
+  if(t==="ext"){
+    const r=S.recs.find(x=>String(x.id)===$("rec").value&&x.k==="tok"&&live(x));if(!r)return no("there is no active token agreement to extend.");
+    if(r.en==null)return no("this agreement has no end date, so there is nothing to extend.");
+    const s=O.filter(o=>sel.has(o.n)).reduce((a,o)=>a+o.s,0);if(s<=S.th)return no("approvals hold "+s+"% of shares. More than "+S.th+"% is needed.");
+    const d=Math.max(1,+$("dy").value||1);r.en+=d;return done(r.t+" for "+r.p+" extended by "+d+" days, to day "+r.en+".");
+  }
+  if(t==="rev"){
+    const r=S.recs.find(x=>String(x.id)===$("rec").value&&live(x));if(!r)return no("there is no active agreement to end.");
+    if(r.k==="work"){const H=hd(r.rg);if(!sel.has(H))return no("ending this record needs the holder of its right ("+H+").")}
+    else{const s=O.filter(o=>sel.has(o.n)).reduce((a,o)=>a+o.s,0),ow=s>S.th,pt=sel.has(r.p),eb=r.eb||"owner";if(eb==="owner"&&!ow)return no("only the owner can end this one, and "+r.p+" can’t. Owners ticked hold "+s+"%, more than "+S.th+"% is needed.");if(eb==="party"&&!pt)return no("only "+r.p+" can end this one early. The owner can’t pull it back.");if(eb==="either"&&!ow&&!pt)return no("needs the owner (more than "+S.th+"%) or "+r.p+".")}
+    r.x=1;return done(r.t+" for "+r.p+" ended. Owner, shares, and authority are unchanged.");
+  }
+  if(k==="r"){
+    const rg=$("rg").value,H=hd(rg);if(t!=="dw"&&rg!=="Copyright"&&!$("reg").value.trim())return no("a "+rg.toLowerCase()+" exists only through registration. Give the registry and number.");if(!sel.has(H))return no("this needs the holder of the "+rg.toLowerCase()+" ("+H+"). Owner shares don’t count here.");
+    if(t==="dw"&&AUTH[sc]==="o")return no("“"+sc+"” is an owner action. The rights holder doesn’t hold it, so can’t delegate it.");
+    if(t==="copy"){S.recs.push({k:"work",t:rg+" assignment",p:to,sc:"all of the "+rg.toLowerCase(),sl:"The right itself",rg:rg,reg:esc($("reg").value.trim()),by:H,v:S.v+1});if(rg==="Trademark")S.rt=to;else if(rg==="Patent")S.rp=to;else if(rg==="Design")S.rd=to;else S.rh=to;S.recs.forEach(r=>{if(r.t==="Delegation (rights holder)"&&r.rg===rg)r.x=1});return done(rg.toLowerCase()+" assigned to "+to+". Existing licences stay and now bind "+to+". The token owner is unchanged.")}
+    const dn=$("dy").value===""?null:Math.max(1,+$("dy").value),en=dn==null?null:S.day+dn;
+    if(t==="dw"){S.recs.push({id:++S.n,k:"work",t:"Delegation (rights holder)",p:to,sc:sc,sl:"Act for the "+rg.toLowerCase()+" holder",rg:rg,en:en,by:H,v:S.v+1});return done("delegation from the "+rg.toLowerCase()+" holder to "+to+" recorded. It ends if that right is assigned.")}
+    const fol=$("lt").value==="token",tr=$("tr").value,ex=$("ex").value==="1";
+    const cf=S.recs.find(r=>r.t==="Licence"&&live(r)&&r.rg===rg&&r.sc===sc&&(r.ex||ex)&&(r.tr===tr||r.tr==="Worldwide"||tr==="Worldwide"));
+    if(cf&&!bug("lic"))return no("conflicts with the active "+(cf.ex?"exclusive ":"")+"licence to "+cf.p+" for “"+sc+"” ("+cf.tr+"). An exclusive licence can’t overlap another for the same use and territory.");
+    S.recs.push({id:++S.n,k:"work",t:"Licence",p:fol?"whoever owns the token":to,f:fol,h:hh(sc+H+to),sc:sc,rg:rg,tr:tr,ex:ex,sl:rg+" · "+tr+(ex?" · exclusive":""),reg:esc($("reg").value.trim()),en:en,by:H,v:S.v+1});
+    return done("licence for "+(fol?"whoever owns the token":to)+" recorded."+(fol?" A transfer moves the right with no new record.":""));
+  }
+  const sum=O.filter(o=>sel.has(o.n)).reduce((a,o)=>a+o.s,0);
+  if(sum<=S.th)return no("approvals hold "+sum+"% of shares. More than "+S.th+"% is needed.");
+  const by=O.filter(o=>sel.has(o.n)).map(o=>o.n).join(" + ");
+  if(t==="actv"){S.life="Active";return done("The token is now Active. Agreements and rights can be created.")}
+  if(t==="ret"){S.life="Ended";return done("The token is retired and Ended. Nothing can change from here.")}
+  if(t==="xfer"){
+    if(shared())return no("this token has co-owners. Move all shares to one owner first, then transfer.");
+    S.holder=to;S.sh=null;sel.clear();sel.add(to);return done("the token moved to "+to+", who now holds 100%.");
+  }
+  if(t==="share"){
+    const f=shared()?O.find(o=>o.n===$("from").value):O[0];
+    if(!f||p<1||p>f.s)return no("can’t move "+p+"% from "+(f?f.n:"nobody")+", who holds "+(f?f.s:0)+"%.");
+    if(to===f.n)return no("can’t give shares to the same owner.");
+    const a=O.map(o=>({n:o.n,s:o.s}));const src=a.find(o=>o.n===f.n);src.s-=p;
+    const e=a.find(o=>o.n===to);if(e)e.s+=p;else a.push({n:to,s:p});
+    const b=a.filter(o=>o.s>0);
+    if(b.length===1){S.holder=b[0].n;S.sh=null}else S.sh=b;
+    return done(p+"% moved from "+f.n+" to "+to+". "+(b.length>1?"Ownership is now shared.":to+" holds 100% again."));
+  }
+  if(t==="terms"){
+    if(!shared())return no("there are no co-owners, so there is no threshold to set. Share ownership first.");
+    if(p<1||p>99)return no("the threshold must be between 1 and 99%.");
+    S.th=p;S.recs.push({k:"tok",t:"Co-owner terms",p:"all owners",sc:"approval needs more than "+p+"%",by:by,v:S.v+1});
+    return done("approval threshold set to more than "+p+"%.");
+  }
+  const nm={rent:"Rental",cust:"Custody",dele:"Delegation"}[t];let lk="";
+  if(t==="rent"&&!$("fee").value.trim())return no("a rental needs a fee or deposit reference. Payment is made outside the module, through Settlement.");
+  if(t==="cust"&&$("pu").value!=="Safekeeping"&&$("eb").value!=="party")return no("while custody secures a loan or a sale, the owner can’t be the one who ends it early. Choose “Only the other party”.");
+  if(t==="dele"&&AUTH[sc]==="r")return no("“"+sc+"” is a rights-holder action. The owner doesn’t hold it, so can’t delegate it. Use “Delegate for the rights holder”.");
+  if(t!=="dele"&&!bug("use")){const c=S.recs.find(r=>(r.t==="Custody"||r.t==="Rental")&&live(r));if(c)return no("the use of the token is already held by "+c.p+" ("+c.t.toLowerCase()+")"+(c.en!=null?" until day "+c.en:"")+". End it or wait for it to expire.")}
+  if(t!=="cust"&&$("rs").value==="lic"){const L=S.recs.filter(r=>r.t==="Licence"&&live(r)).pop();if(!L)return no("a copyright or licensing reason needs a linked licence from the rights holder first. Add the licence, then repeat.");lk=L.p}
+  const dn=$("dy").value===""?null:Math.max(1,+$("dy").value);
+  S.recs.push({id:++S.n,k:"tok",t:nm,p:to,sc:sc,sl:{Rental:"Use",Custody:"Possession + use",Delegation:"Act within scope"}[nm],en:dn==null?null:S.day+dn,fl:nm==="Delegation"?false:$("fl").value==="1",eb:$("eb").value,bn:$("bn").value,fee:esc($("fee").value.trim()),pu:t==="cust"?$("pu").value:"",vc:t==="dele"?$("vc").value:"",cp:t==="dele"?esc($("cp").value.trim()):"",dc:esc($("dc").value.trim()),dg:own().filter(o=>sel.has(o.n)).map(o=>o.n),pol:t==="dele"?$("pol").value:"",ac:$("nacc").value!=="1",by:by,lk:lk,v:S.v+1});
+  done(nm.toLowerCase()+" for "+to+" recorded"+($("nacc").value==="1"?" as pending until "+to+" accepts":"")+". Owner, shares, and authority are unchanged.");
+}
+$("act").onchange=()=>{const k=KIND[$("act").value];sel.clear();if(k==="r")sel.add(S.rh);else if(k==="o")sel.add(S.holder);render()};
+$("adv").onclick=()=>{S.day+=10;render();say(true,"day "+S.day+". Agreements past their term now read as expired. Nothing was written, because expiry is computed.")};
+$("go").onclick=run;$("comp").onchange=render;$("vsim").onchange=render;$("rg").onchange=render;$("aq-p").onchange=render;$("aq-q").onchange=render;
+$("exb").onclick=()=>{if(S.recs.length){say(false,"the example loads only into an empty Domain 2.");return}S.life="Active";const P=o=>{S.v++;S.recs.push(Object.assign({id:++S.n,v:S.v},o));S.log.unshift({ok:true,tl:o.t,by:o.by,m:o.t+" for "+o.p+" recorded.",v:S.v,sg:stageNow(),d:S.day,at:new Date().toLocaleTimeString()})};
+  P({k:"tok",t:"Rental",p:"Carol",sc:"display",sl:"Use",en:30,fl:false,eb:"owner",bn:"owner",fee:"SET-1042",dc:"ipfs://agreement-1",ac:true,by:"Alice"});
+  P({k:"tok",t:"Delegation",p:"AgentCo",sc:"list for sale",sl:"Act within scope",en:60,fl:false,eb:"owner",bn:"owner",vc:"5000",cp:"MarketX",dg:["Alice"],pol:"lapse",ac:false,by:"Alice"});
+  P({k:"work",t:"Licence",p:"StreamCo",sc:"stream",rg:"Copyright",tr:"Worldwide",ex:true,sl:"Copyright · Worldwide · exclusive",en:730,by:S.rh});
+  P({k:"work",t:"Licence",p:"ShopCo",sc:"use the name on products",rg:"Trademark",tr:"India",ex:false,sl:"Trademark · India",reg:"IN TM 1234567",en:365,by:S.rt});
+  $("rv").value=S.v;render()};
+render();
+</script>
+</body>
+</html>
